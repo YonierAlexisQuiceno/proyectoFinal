@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UAM-Snacks | Menú y Precios</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root { --azul: #0069A3; --amarillo: #F4D73B; }
+        body { background: #f0f2f5; }
+        .header-uam { background: var(--azul); }
+        .btn-uam { background: var(--amarillo); color: var(--azul); font-weight: 700; border: none; }
+        .btn-uam:hover { background: #e6c62e; color: #003352; }
+    </style>
+</head>
+<body>
+    <!-- Cabecera -->
+    <div class="header-uam text-white p-3 mb-4">
+        <div class="container" style="max-width:600px;">
+            <a href="index.html" class="text-white-50 text-decoration-none small">← Menú Principal</a>
+            <h4 class="mb-0 mt-1">📋 Menú y Precios <small class="opacity-50">— Grupo 1 · Arreglos</small></h4>
+        </div>
+    </div>
+
+    <div class="container" style="max-width:600px;">
+        <!-- Formulario para agregar productos -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row g-2 mb-2">
+                    <div class="col-7">
+                        <input type="text" id="nombreProducto" class="form-control" placeholder="Nombre del snack">
+                    </div>
+                    <div class="col-5">
+                        <input type="number" id="precioProducto" class="form-control" placeholder="Precio ($)" min="0">
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary flex-fill" style="background:var(--azul);border:none;" onclick="agregarProducto()">➕ Añadir</button>
+                    <button class="btn btn-uam flex-fill" onclick="ordenarBurbuja()">⬆⬇ Ordenar (Burbuja)</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de productos -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center" style="background:var(--azul);color:white;">
+                <span>Productos en el Menú</span>
+                <span class="badge bg-warning text-dark" id="contadorProductos">0</span>
+            </div>
+            <ul class="list-group list-group-flush" id="listaMenu">
+                <li class="list-group-item text-center text-muted py-4">🍽️ Aún no hay productos. ¡Agrega tu primer snack!</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- CAPA DE LÓGICA (JAVASCRIPT)                -->
+    <!-- Grupo 1: Arreglos y Ordenamiento Burbuja   -->
+    <!-- ========================================== -->
+    <script>
+        // ============================================
+        // ARREGLO PRINCIPAL: Almacena los productos del menú
+        // Cada elemento es un objeto {nombre, precio}
+        // Se sincroniza con localStorage para compartir
+        // datos con los otros módulos.
+        // ============================================
+        let menu = cargarMenu();
+
+        // --- FUNCIÓN: Cargar menú desde localStorage ---
+        // Si ya hay datos guardados, los recupera;
+        // si no, retorna un arreglo vacío.
+        function cargarMenu() {
+            let datos = localStorage.getItem("uam_menu");
+            if (datos) {
+                return JSON.parse(datos);  // Convertir texto → arreglo
+            }
+            return [];
+        }
+
+        // --- FUNCIÓN: Guardar menú en localStorage ---
+        // Convierte el arreglo a texto (JSON) y lo guarda.
+        // Así los módulos 2, 3 y 4 pueden leer los productos.
+        function guardarMenu() {
+            localStorage.setItem("uam_menu", JSON.stringify(menu));
+        }
+
+        // --- FUNCIÓN: agregarProducto() ---
+        // Captura datos del formulario, valida con if/else,
+        // y los inserta al arreglo con push().
+        function agregarProducto() {
+            let nombre = document.getElementById('nombreProducto').value.trim();
+            let precio = parseFloat(document.getElementById('precioProducto').value);
+
+            // Validación con if/else
+            if (nombre === "" || isNaN(precio) || precio <= 0) {
+                alert("Por favor ingresa un nombre y un precio válido.");
+                return;
+            }
+
+            // Insertar en el arreglo
+            menu.push({ nombre: nombre, precio: precio });
+
+            // Limpiar formulario
+            document.getElementById('nombreProducto').value = '';
+            document.getElementById('precioProducto').value = '';
+            document.getElementById('nombreProducto').focus();
+
+            guardarMenu();   // Sincronizar con localStorage
+            mostrarMenu();   // Actualizar pantalla
+        }
+
+        // --- FUNCIÓN: eliminarProducto(indice) ---
+        // Elimina un elemento del arreglo usando splice()
+        function eliminarProducto(indice) {
+            menu.splice(indice, 1);  // Eliminar 1 elemento en la posición
+            guardarMenu();
+            mostrarMenu();
+        }
+
+        // --- FUNCIÓN: mostrarMenu() ---
+        // Recorre el arreglo con un ciclo FOR y dibuja cada producto
+        function mostrarMenu() {
+            let lista = document.getElementById('listaMenu');
+            lista.innerHTML = "";
+            document.getElementById('contadorProductos').textContent = menu.length;
+
+            // Si el menú está vacío
+            if (menu.length === 0) {
+                lista.innerHTML = '<li class="list-group-item text-center text-muted py-4">🍽️ Aún no hay productos.</li>';
+                return;
+            }
+
+            // Ciclo FOR: recorrer desde 0 hasta el final del arreglo
+            for (let i = 0; i < menu.length; i++) {
+                let precioFormateado = "$" + menu[i].precio.toLocaleString('es-CO');
+                let li = document.createElement('li');
+                li.className = "list-group-item d-flex justify-content-between align-items-center";
+                li.innerHTML = `
+                    <span><strong>${i + 1}.</strong> ${menu[i].nombre}</span>
+                    <span>
+                        <span class="badge bg-primary" style="background:var(--azul)!important">${precioFormateado}</span>
+                        <button class="btn btn-sm btn-outline-danger ms-2" onclick="eliminarProducto(${i})">✕</button>
+                    </span>
+                `;
+                lista.appendChild(li);
+            }
+        }
+
+        // ============================================
+        // RETO TÉCNICO: Algoritmo de Burbuja (Bubble Sort)
+        //
+        // Compara elementos VECINOS del arreglo.
+        // Si el izquierdo > derecho, los INTERCAMBIA.
+        //
+        // Ejemplo: [5, 3, 1]
+        //   Pasada 1: [3, 5, 1] → [3, 1, 5]
+        //   Pasada 2: [1, 3, 5] ✓ Ordenado!
+        // ============================================
+        function ordenarBurbuja() {
+            if (menu.length < 2) {
+                alert("Agrega al menos 2 productos para ordenar.");
+                return;
+            }
+
+            let n = menu.length;
+
+            // Ciclo externo: controla las pasadas
+            for (let i = 0; i < n - 1; i++) {
+                // Ciclo interno: compara vecinos
+                for (let j = 0; j < n - 1 - i; j++) {
+                    // Si el precio actual > siguiente, intercambiar
+                    if (menu[j].precio > menu[j + 1].precio) {
+                        let aux = menu[j];         // Variable auxiliar
+                        menu[j] = menu[j + 1];     // Mover el menor
+                        menu[j + 1] = aux;         // Colocar el mayor
+                    }
+                }
+            }
+
+            guardarMenu();
+            mostrarMenu();
+            alert("✅ Menú ordenado del más barato al más caro.");
+        }
+
+        // Permitir agregar con ENTER
+        document.getElementById('precioProducto').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') agregarProducto();
+        });
+
+        // Inicializar
+        mostrarMenu();
+    </script>
+</body>
+</html>

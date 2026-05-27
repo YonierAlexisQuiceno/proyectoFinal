@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UAM-Snacks | Buscador Inteligente</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root { --azul: #0069A3; --amarillo: #F4D73B; }
+        body { background: #f0f2f5; }
+        .header-uam { background: var(--azul); }
+        .btn-uam { background: var(--amarillo); color: var(--azul); font-weight: 700; border: none; }
+        .btn-uam:hover { background: #e6c62e; }
+        .chip { display: inline-block; padding: 5px 14px; border-radius: 20px; font-size: 0.85rem; margin: 3px; border: 1px solid #dee2e6; background: white; transition: 0.2s; }
+        .chip.resaltado { background: var(--amarillo); border-color: var(--azul); font-weight: 700; }
+        .chip.descartado { opacity: 0.35; text-decoration: line-through; }
+    </style>
+</head>
+<body>
+    <!-- Cabecera -->
+    <div class="header-uam text-white p-3 mb-4">
+        <div class="container" style="max-width:600px;">
+            <a href="index.html" class="text-white-50 text-decoration-none small">← Menú Principal</a>
+            <h4 class="mb-0 mt-1">🔍 Buscador Inteligente <small class="opacity-50">— Grupo 3 · Recursividad</small></h4>
+        </div>
+    </div>
+
+    <div class="container" style="max-width:600px;">
+
+        <!-- Inventario visual (chips) -->
+        <div class="card mb-3">
+            <div class="card-header" style="background:var(--azul);color:white;">📦 Inventario Disponible</div>
+            <div class="card-body" id="chipsInventario">
+                <p class="text-muted">Cargando productos...</p>
+            </div>
+        </div>
+
+        <!-- Barra de búsqueda -->
+        <div class="input-group mb-3">
+            <input type="text" id="palabraBuscar" class="form-control form-control-lg" placeholder="Buscar producto...">
+            <button class="btn btn-uam px-4" onclick="iniciarBusqueda()">🔎 Buscar</button>
+        </div>
+
+        <!-- Resultado -->
+        <div id="resultado" class="alert d-none mb-3" role="alert"></div>
+
+        <!-- Traza de la recursión (paso a paso) -->
+        <div id="seccionTraza" class="card d-none mb-3">
+            <div class="card-header" style="background:var(--azul);color:white;">
+                🔄 Traza de la Recursión <span class="badge bg-warning text-dark">PASO A PASO</span>
+            </div>
+            <ul class="list-group list-group-flush" id="trazaPasos"></ul>
+        </div>
+
+        <!-- Explicación -->
+        <div class="card border-0" style="background:rgba(0,105,163,0.05);">
+            <div class="card-body">
+                <h6 style="color:var(--azul);">📚 ¿Cómo funciona la recursividad?</h6>
+                <p class="small text-muted mb-1">
+                    Una función <strong>recursiva</strong> es una que <strong>se llama a sí misma</strong>.
+                    Nuestra función revisa la posición <code>indice</code>, y si no encuentra el producto,
+                    se llama con <code>indice + 1</code>.
+                </p>
+                <p class="small text-muted mb-0">
+                    <strong>🛑 Condiciones de escape:</strong><br>
+                    1. <code>indice === arreglo.length</code> → Fin del arreglo, retornar <code>false</code><br>
+                    2. <code>arreglo[indice] === objetivo</code> → ¡Encontrado!, retornar <code>true</code>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- CAPA DE LÓGICA (JAVASCRIPT)                -->
+    <!-- Grupo 3: Recursividad                      -->
+    <!-- ========================================== -->
+    <script>
+        // ============================================
+        // ARREGLO DEL INVENTARIO
+        // Lee los productos del Módulo 1 (localStorage).
+        // Si no hay datos, usa un inventario por defecto.
+        // ============================================
+        let inventario = cargarInventario();
+        let trazaRecursion = [];  // Registro paso a paso
+
+        // Cargar productos del Módulo 1 o usar los predeterminados
+        function cargarInventario() {
+            let datos = localStorage.getItem("uam_menu");
+            if (datos) {
+                let productos = JSON.parse(datos);
+                // Extraer solo los nombres del arreglo de objetos
+                let nombres = [];
+                for (let i = 0; i < productos.length; i++) {
+                    nombres.push(productos[i].nombre);
+                }
+                return nombres;
+            }
+            // Inventario por defecto si no hay datos del módulo 1
+            return ["Agua", "Jugo", "Empanada", "Papa", "Galletas", "Café", "Sándwich", "Manzana"];
+        }
+
+        // Mostrar los chips del inventario
+        function mostrarInventario() {
+            let contenedor = document.getElementById('chipsInventario');
+            if (inventario.length === 0) {
+                contenedor.innerHTML = '<p class="text-muted">No hay productos. Agrega algunos en el <a href="modulo1.html">Módulo 1</a>.</p>';
+                return;
+            }
+            contenedor.innerHTML = "";
+            for (let i = 0; i < inventario.length; i++) {
+                contenedor.innerHTML += `<span class="chip" id="chip-${i}">${inventario[i]}</span>`;
+            }
+        }
+
+        // --- FUNCIÓN: iniciarBusqueda() ---
+        // Captura el texto y llama a la función recursiva
+        function iniciarBusqueda() {
+            let buscado = document.getElementById('palabraBuscar').value.trim();
+            if (buscado === "") return alert("Escribe algo para buscar.");
+
+            // Reiniciar
+            trazaRecursion = [];
+            mostrarInventario();
+
+            // *** LLAMADA INICIAL a la función recursiva (índice = 0) ***
+            let encontrado = busquedaRecursiva(inventario, buscado.toLowerCase(), 0);
+
+            // Mostrar resultado
+            let divRes = document.getElementById('resultado');
+            divRes.classList.remove('d-none', 'alert-success', 'alert-danger');
+            if (encontrado) {
+                divRes.className = "alert alert-success text-center";
+                divRes.innerHTML = `✅ ¡Sí tenemos "<strong>${buscado}</strong>" en inventario!`;
+            } else {
+                divRes.className = "alert alert-danger text-center";
+                divRes.innerHTML = `❌ No encontramos "<strong>${buscado}</strong>".`;
+            }
+
+            // Mostrar traza y resaltar chips
+            mostrarTraza();
+            resaltarChips(buscado.toLowerCase());
+        }
+
+        // ============================================
+        // FUNCIÓN RECURSIVA: busquedaRecursiva()
+        //
+        // Se llama A SÍ MISMA para buscar un producto.
+        //
+        // Parámetros:
+        //   arreglo: donde buscamos
+        //   objetivo: lo que buscamos (en minúsculas)
+        //   indiceActual: posición que revisamos ahora
+        //
+        // CONDICIONES DE ESCAPE:
+        //   1. indiceActual === arreglo.length → NO encontrado
+        //   2. arreglo[indiceActual] === objetivo → SÍ encontrado
+        // ============================================
+        function busquedaRecursiva(arreglo, objetivo, indiceActual) {
+
+            // CONDICIÓN DE ESCAPE #1: ¿Llegamos al final del arreglo?
+            if (indiceActual === arreglo.length) {
+                trazaRecursion.push({ msg: "Fin del arreglo. No encontrado.", tipo: "danger" });
+                return false;
+            }
+
+            let actual = arreglo[indiceActual].toLowerCase();
+
+            // CONDICIÓN DE ESCAPE #2: ¿Lo encontramos?
+            if (actual === objetivo) {
+                trazaRecursion.push({ msg: `[${indiceActual}] "${arreglo[indiceActual]}" ✅ ¡ENCONTRADO!`, tipo: "success" });
+                return true;
+            }
+
+            // PASO RECURSIVO: no es este, avanzar al siguiente
+            trazaRecursion.push({ msg: `[${indiceActual}] "${arreglo[indiceActual]}" ≠ "${objetivo}" → avanzar...`, tipo: "secondary" });
+
+            // *** La función se llama a sí misma con indice + 1 ***
+            return busquedaRecursiva(arreglo, objetivo, indiceActual + 1);
+        }
+
+        // Mostrar traza paso a paso
+        function mostrarTraza() {
+            document.getElementById('seccionTraza').classList.remove('d-none');
+            let lista = document.getElementById('trazaPasos');
+            lista.innerHTML = "";
+            for (let i = 0; i < trazaRecursion.length; i++) {
+                let paso = trazaRecursion[i];
+                lista.innerHTML += `
+                    <li class="list-group-item d-flex align-items-center gap-2">
+                        <span class="badge bg-${paso.tipo}">${i + 1}</span>
+                        <span>${paso.msg}</span>
+                    </li>
+                `;
+            }
+        }
+
+        // Resaltar chips: encontrado = amarillo, descartados = tachados
+        function resaltarChips(buscado) {
+            for (let i = 0; i < inventario.length; i++) {
+                let chip = document.getElementById('chip-' + i);
+                if (inventario[i].toLowerCase() === buscado) {
+                    chip.classList.add('resaltado');
+                    break;
+                } else {
+                    chip.classList.add('descartado');
+                }
+            }
+        }
+
+        // Buscar con ENTER
+        document.getElementById('palabraBuscar').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') iniciarBusqueda();
+        });
+
+        // Inicializar
+        mostrarInventario();
+    </script>
+</body>
+</html>
