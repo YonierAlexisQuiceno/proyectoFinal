@@ -44,6 +44,8 @@ A continuación se detalla el esquema de almacenamiento compartido:
 ### 1. Menú Principal (`index.html`)
 Es la puerta de entrada al sistema. Presenta un diseño moderno en cuadrícula responsiva (Grid de Bootstrap) con tarjetas interactivas que enlazan a cada módulo. Incluye animaciones suaves de desplazamiento (`hover effects`) y un fondo degradado premium.
 
+*   **Característica Especial Integrada (Copia de Seguridad):** Contiene un cargador de archivos que utiliza la API de JavaScript **`FileReader`**. Los usuarios pueden subir cualquier reporte `.txt` descargado desde el Módulo 4 y el sistema extraerá automáticamente el bloque de estado serializado en JSON que se encuentra al final del archivo, restaurando de inmediato los productos del menú, el estado físico de las mesas y todas las ventas en el `localStorage`. Esto permite a los estudiantes comprender cómo funciona el análisis de archivos de texto y la deserialización de datos sin añadir complejidad a sus respectivos submódulos individuales.
+
 ---
 
 ### Módulo 1: Gestión de Menú y Precios (`modulo1.html`)

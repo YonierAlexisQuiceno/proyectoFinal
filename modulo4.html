@@ -200,6 +200,14 @@
             reporte += "  Proyecto Final — UAM 2026\n";
             reporte += "========================================\n";
 
+            // Guardamos el estado comprimido al final para posibilitar la importación en index.html
+            let backupState = {
+                menu: menu,
+                mesas: mesas,
+                ventas: ventas
+            };
+            reporte += "\n\n/*-- BACKUP_DATA --\n" + JSON.stringify(backupState) + "\n-- END_BACKUP_DATA --*/\n";
+
             document.getElementById('textoReporte').value = reporte;
         }
 

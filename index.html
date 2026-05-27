@@ -67,8 +67,73 @@
             </div>
         </div>
 
+        <!-- Tarjeta de Importación de Copia de Seguridad -->
+        <div class="card mt-4 border-0 shadow-sm text-center text-white" style="background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(5px); border-radius: 12px;">
+            <div class="card-body p-3">
+                <h6 class="mb-2 fw-bold">📥 Cargar Copia de Seguridad</h6>
+                <p class="small text-white-50 mb-3">Sube el archivo <code>.txt</code> descargado en el Módulo 4 para restaurar el menú, mesas y ventas.</p>
+                <div class="d-flex justify-content-center">
+                    <input type="file" id="archivoBackup" accept=".txt" class="d-none" onchange="importarDatos(event)">
+                    <button class="btn btn-uam w-100 py-2" onclick="document.getElementById('archivoBackup').click()">
+                        📁 Seleccionar Reporte (.txt)
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <p class="text-center text-white-50 mt-4 small">Proyecto Final Integrador — UAM 2026</p>
     </div>
 
+    <!-- Lógica de Importación para no saturar los módulos de los estudiantes -->
+    <script>
+        function importarDatos(event) {
+            let archivo = event.target.files[0];
+            if (!archivo) return;
+
+            let lector = new FileReader();
+            lector.onload = function(e) {
+                let contenido = e.target.result;
+                
+                // Buscar etiquetas delimitadoras
+                let inicioTag = "/*-- BACKUP_DATA --";
+                let finTag = "-- END_BACKUP_DATA --*/";
+                
+                let idxInicio = contenido.indexOf(inicioTag);
+                let idxFin = contenido.indexOf(finTag);
+                
+                if (idxInicio === -1 || idxFin === -1) {
+                    alert("❌ Error: El archivo seleccionado no contiene una copia de seguridad válida de UAM-Snacks.");
+                    return;
+                }
+                
+                try {
+                    // Extraer y procesar la cadena JSON
+                    let jsonText = contenido.substring(idxInicio + inicioTag.length, idxFin).trim();
+                    let datos = JSON.parse(jsonText);
+                    
+                    // Restaurar localStorage
+                    if (datos.menu) {
+                        localStorage.setItem("uam_menu", JSON.stringify(datos.menu));
+                    }
+                    if (datos.mesas) {
+                        localStorage.setItem("uam_mesas", JSON.stringify(datos.mesas));
+                    }
+                    if (datos.ventas) {
+                        localStorage.setItem("uam_ventas", JSON.stringify(datos.ventas));
+                    }
+                    
+                    alert("✅ ¡Datos importados correctamente! Se han restaurado: " + 
+                          (datos.menu ? datos.menu.length : 0) + " productos en menú, el estado de las mesas y " + 
+                          (datos.ventas ? datos.ventas.length : 0) + " ventas registradas.");
+                    
+                    // Limpiar el input para permitir subir el mismo archivo si es necesario
+                    document.getElementById('archivoBackup').value = "";
+                } catch (err) {
+                    alert("❌ Error al leer los datos de la copia de seguridad: " + err.message);
+                }
+            };
+            lector.readAsText(archivo);
+        }
+    </script>
 </body>
 </html>
